@@ -91,21 +91,5 @@ module processor(
     input [31:0] data_readRegA, data_readRegB;
 
     /* YOUR CODE STARTS HERE */
-	 
-	 // Assign four types of clock
-	 wire pc_clk, imem_clk, dmem_clk, reg_clk;
-	 assign imem_clk = clock;
-	 assign dmem_clk = clock;
-	 
-	 REG_CLOCK clock_divider(reg_clk, clock, reset);
-	 PC_CLOCK clock_divider(pc_clk, reg_clk, reset);
-	 
-	 // ALU
-	 wire [31:0] data_operandB, data_result;
-	 wire [4:0] ctrl_ALUopcode;
-	 wire isNotEqual, isLessThan, overflow;
-	 
-	 
-	 
-	 
+
 endmodule
