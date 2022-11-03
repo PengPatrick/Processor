@@ -72,7 +72,9 @@ module processor(
     data_readRegB,                   // I: Data from port B of regfile
 	 
 	 //临时增加的测试接口
-	 operand_B
+	 operand_B,
+	 overflow,
+	 status_en
 	 
 );
     // Control signals
@@ -96,6 +98,8 @@ module processor(
 	 
 	 //临时增加的接口
 	 output [31:0] operand_B;
+	 output overflow;
+	 output status_en;
 
     /* YOUR CODE STARTS HERE */
 	 
@@ -136,7 +140,7 @@ module processor(
 	 //ctrl_writeEnable
 	 assign ctrl_writeEnable = control_signal[2];
 	 //ctrl_writeReg
-	 assign ctrl_writeReg = reg_d;
+	 assign ctrl_writeReg = expr ? 5'b11110 : reg_d;
 	 //ctrl_readRegA
 	 assign ctrl_readRegA = reg_s;
 	 //ctrl_readRegB
@@ -159,10 +163,19 @@ module processor(
 	 //ALUopcode
 	 wire [4:0] func_field_in;
 	 assign func_field_in = control_signal[1] ? func_field : 5'b0;
-	 //calculate and get result
+	 //calculate and get result/overflow
 	 wire [31:0] alu_execute_data_result;
+	 //wire overflow;
 	 alu alu_execute(.data_operandA(data_readRegA), .data_operandB(operand_B), .ctrl_ALUopcode(func_field_in), 
-					.ctrl_shiftamt(shamt_in), .data_result(alu_execute_data_result));
+					.ctrl_shiftamt(shamt_in), .data_result(alu_execute_data_result), .overflow(overflow));
+					
+	 /*exception part*/
+	 wire [31:0] status_write;
+	 //wire status_en;
+	 exception the_exception(opcode, func_field, status_write, status_en);
+	 //expr signal
+	 wire expr;
+	 and and_gate_expr(expr, overflow, status_en);
 					
 	 /* dmeme output */
 	 //address_dmem
@@ -174,6 +187,9 @@ module processor(
 	 
 	 /* Regfile output */
 	 //data_writeReg
-	 assign data_writeReg = control_signal[0] ? q_dmem : alu_execute_data_result;
+	 wire [31:0] data_writeReg_rwd;
+	 assign data_writeReg_rwd = control_signal[0] ? q_dmem : alu_execute_data_result;
+	 //expr
+	 assign data_writeReg = expr ? status_write : data_writeReg_rwd;
 	 
 endmodule

@@ -26,7 +26,8 @@ module skeleton(
 	output [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB,
 	output [11:0] address_dmem, address_imem,
 	output [31:0] data, data_writeReg, data_readRegA, data_readRegB,
-	output [31:0] q_imem, operand_B
+	output [31:0] q_imem, operand_B,
+	output overflow, status_en
 	);
 
 	 
@@ -34,9 +35,10 @@ module skeleton(
 	 wire regfile_clock_t;
 	 assign imem_clock = clock;
 	 assign dmem_clock = clock;
-	 clock_divider clk_Regfile(regfile_clock, clock, reset);
-	 //assign regfile_clock = regfile_clock_t;
-	 clock_divider clk_Processor(processor_clock, regfile_clock, reset);
+	 clock_divider clk_Regfile(regfile_clock_t, clock, reset);
+	 clock_divider clk_Processor(processor_clock, regfile_clock_t, reset);
+	 assign regfile_clock = processor_clock;
+	 
 
     /** IMEM **/
     // Figure out how to generate a Quartus syncram component and commit the generated verilog file.
@@ -59,7 +61,7 @@ module skeleton(
     dmem my_dmem(
         .address    (/* 12-bit wire */address_dmem),       // address of data
         .clock      (dmem_clock),                  // may need to invert the clock
-        .data	    (/* 32-bit data in */data),    // data you want to write
+        .data	    (/* 32-bit data in k*/data),    // data you want to write
         .wren	    (/* 1-bit signal */wren),      // write enable
         .q          (/* 32-bit data out */q_dmem)    // data from dmem
     );
@@ -106,7 +108,9 @@ module skeleton(
         data_writeReg,                  // O: Data to write to for regfile
         data_readRegA,                  // I: Data from port A of regfile
         data_readRegB,                  // I: Data from port B of regfile
-		  operand_B
+		  operand_B,
+		  overflow,
+		  status_en
     );
 
 endmodule
