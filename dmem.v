@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-// You need to generate this component correctly
-=======
 // megafunction wizard: %RAM: 1-PORT%
 // GENERATION: STANDARD
 // VERSION: WM1.0
@@ -174,4 +171,3 @@ endmodule
 // Retrieval info: GEN_FILE: TYPE_NORMAL dmem_inst.v FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL dmem_bb.v TRUE
 // Retrieval info: LIB_FILE: altera_mf
->>>>>>> cffac3166ebc375e41d1368628e102358a1a1fb4
