@@ -25,7 +25,12 @@ module regfile(
 				registers[ctrl_writeReg] = data_writeReg;
 	end
 	
+<<<<<<< HEAD
 	assign data_readRegA = ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegA) ? 32'bz : registers[ctrl_readRegA];
 	assign data_readRegB = ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegB) ? 32'bz : registers[ctrl_readRegB];
+=======
+	assign data_readRegA = /*ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegA) ? 32'bz : */registers[ctrl_readRegA];
+	assign data_readRegB = /*ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegB) ? 32'bz : */registers[ctrl_readRegB];
+>>>>>>> cffac3166ebc375e41d1368628e102358a1a1fb4
 	
 endmodule
