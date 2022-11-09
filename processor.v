@@ -105,7 +105,7 @@ module processor(
 	 
 	 /* program counter self-increasing 1 */
 	 wire [31:0] pc_address_out, pc_address_in;
-	 pc my_pc(.clk(clock), .in(pc_address_in), .clr(reset), .out(pc_address_out));
+	 pc my_pc(.clk(clock), .in(pc_address_in), .pc_en(1'b1), .clr(reset), .out(pc_address_out));
 	 alu alu_pc_plus_4(.data_operandA(pc_address_out), .data_operandB(32'd1), .ctrl_ALUopcode(5'b0), 
 					.ctrl_shiftamt(5'b0), .data_result(pc_address_in));
 	 /* imeme output */
@@ -145,8 +145,6 @@ module processor(
 	 assign ctrl_readRegA = reg_s;
 	 //ctrl_readRegB
 	 assign ctrl_readRegB = control_signal[3] ? reg_d : reg_t;
-	 //data_writeReg
-	 /* ！！！在后面的步骤中补充完成！！！ */
 	 
 	 /* ALU execute part */
 	 //operandB
