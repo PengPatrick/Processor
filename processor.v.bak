@@ -178,15 +178,7 @@ module processor(
 	 or OR_JP_JAL(jp_jal, control_signal[6], control_signal[8]);
 	 // for bex, only signal valid & rd != 0
 	 wire bex;
-	 wire [32:0] dataA;
-	 genvar i;
-	 generate for(i = 0; i <= 31; i = i + 1)
-		begin: labelA
-			or ORA(dataA[i+1], dataA[i], data_readRegA[i]);
-		end
-	 endgenerate
-
-	 and AND5(bex, control_signal[11], dataA[32]);
+	 and AND5(bex, control_signal[11], data_readRegA);
 	 // signal_T ===== for PC = T
 	 wire signal_T;
 	 or OR_SIGNAL_T(signal_T, jp_jal, bex);
