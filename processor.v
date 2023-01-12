@@ -69,17 +69,9 @@ module processor(
     ctrl_readRegB,                  // O: Register to read from port B of regfile
     data_writeReg,                  // O: Data to write to for regfile
     data_readRegA,                  // I: Data from port A of regfile
-<<<<<<< HEAD
     data_readRegB                   // I: Data from port B of regfile
-=======
-    data_readRegB,                   // I: Data from port B of regfile
 	 
-	 //临时增加的测试接口
-	 operand_B,
-	 overflow,
-	 status_en
 	 
->>>>>>> cffac3166ebc375e41d1368628e102358a1a1fb4
 );
     // Control signals
     input clock, reset;
@@ -99,31 +91,22 @@ module processor(
     output [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB;
     output [31:0] data_writeReg;
     input [31:0] data_readRegA, data_readRegB;
-<<<<<<< HEAD
-
-    /* YOUR CODE STARTS HERE */
-
-=======
 	 
-	 //临时增加的接口
-	 output [31:0] operand_B;
-	 output overflow;
-	 output status_en;
+	 
 
     /* YOUR CODE STARTS HERE */
 	 
-	 /* program counter self-increasing 1 */
-	 wire [31:0] pc_address_out, pc_address_in;
-	 pc my_pc(.clk(clock), .in(pc_address_in), .clr(reset), .out(pc_address_out));
-	 alu alu_pc_plus_4(.data_operandA(pc_address_out), .data_operandB(32'd1), .ctrl_ALUopcode(5'b0), 
-					.ctrl_shiftamt(5'b0), .data_result(pc_address_in));
-	 /* imeme output */
-	 assign address_imem = pc_address_out[11:0];
-	 
-	 /* parse insns(q_imem) */
 	 //opcode
 	 wire [4:0] opcode;
 	 assign opcode = q_imem[31:27];
+	 
+	 /* control signals */
+	 wire [12:0] control_signal;
+	 //7:BR 6:JP 5:ALUinB 4:ALUop 3:DMwe 2:Rwe 1:Rdst 0:Rwd
+	 control_circuit my_control_circuit(.Opcode(opcode), .control_signal(control_signal));	
+	
+	 /* parse insns(q_imem) */
+
 	 //rd
 	 wire [4:0] reg_d;
 	 assign reg_d = q_imem[26:22];
@@ -138,31 +121,16 @@ module processor(
 	 assign shamt = q_imem[11:7];
 	 //func_field
 	 wire [4:0] func_field;
-	 assign func_field = q_imem[6:2];	 
+	 assign func_field = q_imem[6:2];
 	 
-	 /* control signals */
-	 wire [7:0] control_signal;
-	 //7:BR 6:JP 5:ALUinB 4:ALUop 3:DMwe 2:Rwe 1:Rdst 0:Rwd
-	 control_circuit my_control_circuit(.Opcode(opcode), .control_signal(control_signal));
-	 
-	 /* Regfile output */
-	 //ctrl_writeEnable
-	 assign ctrl_writeEnable = control_signal[2];
-	 //ctrl_writeReg
-	 assign ctrl_writeReg = expr ? 5'b11110 : reg_d;
-	 //ctrl_readRegA
-	 assign ctrl_readRegA = reg_s;
-	 //ctrl_readRegB
-	 assign ctrl_readRegB = control_signal[3] ? reg_d : reg_t;
-	 //data_writeReg
-	 /* ！！！在后面的步骤中补充完成！！！ */
-	 
-	 /* ALU execute part */
-	 //operandB
 	 wire [31:0] operand_B, extended_constant;
 	 wire [16:0] constant;
 	 assign constant = q_imem[16:0];
 	 sign_extension sx_1(extended_constant, constant);
+	 
+	 	 /* ALU execute part */
+	 //operandB
+
 	 //assign extended_constant = {{(15){constant[16]}},constant};
 	 //assign extended_constant = constant[16] ? {15'b11111_11111_11111,constant} : {15'b0, constant};
 	 assign operand_B = control_signal[5] ? extended_constant : data_readRegB;
@@ -174,18 +142,112 @@ module processor(
 	 assign func_field_in = control_signal[1] ? func_field : 5'b0;
 	 //calculate and get result/overflow
 	 wire [31:0] alu_execute_data_result;
+	 wire isNotEqual, isLessThan;
 	 //wire overflow;
 	 alu alu_execute(.data_operandA(data_readRegA), .data_operandB(operand_B), .ctrl_ALUopcode(func_field_in), 
-					.ctrl_shiftamt(shamt_in), .data_result(alu_execute_data_result), .overflow(overflow));
-					
+					.ctrl_shiftamt(shamt_in), .data_result(alu_execute_data_result), .overflow(overflow), .isNotEqual(isNotEqual), .isLessThan(isLessThan));
+	 
+	 
+	 // ############## PC & Imem start ################
+	 
+	 /* program counter self-increasing 1 */
+//	 wire [31:0] pc_address_out, pc_address_in;
+//	 pc my_pc(.clk(clock), .in(pc_address_in), .pc_en(1'b1), .clr(reset), .out(pc_address_out));
+//	 alu alu_pc_plus_4(.data_operandA(pc_address_out), .data_operandB(32'd1), .ctrl_ALUopcode(5'b0), 
+//	 				.ctrl_shiftamt(5'b0), .data_result(pc_address_in));
+//	 /* imeme output */
+//	 assign address_imem = pc_address_out[11:0];
+	 
+	 
+	 wire [31:0] addr_next, addr_curr; 
+ 
+		
+	 wire bne, blt, br;
+	 // bne signal, only when isNotEqual & bne signal
+	 and AND1(bne, control_signal[7], isNotEqual);
+	 // isBigerThan signal for blt
+	 wire isBigerThan; 
+	 and AND_BIGGER(isBigerThan, ~isLessThan, isNotEqual);
+	 // blt signal, only when isBiger & blt signal 
+	 and AND2(blt, control_signal[10], isBigerThan);
+	 // Br Signal ===== for PC = PC + 1 + N
+	 or OR2(br, bne, blt);
+	 
+	 
+	 wire jp_jal;
+	 or OR_JP_JAL(jp_jal, control_signal[6], control_signal[8]);
+	 // for bex, only signal valid & rd != 0
+	 wire bex;
+	 and AND5(bex, control_signal[11], data_readRegA);
+	 // signal_T ===== for PC = T
+	 wire signal_T;
+	 or OR_SIGNAL_T(signal_T, jp_jal, bex);
+	 
+	 // begin the PC update and assign 
+	 wire [31:0] addr_curr_tmp, addr_common, addr_temp, addr_br, addr_signal_T, addr_jr;
+	 // PC = PC + 1
+	 alu PC_COMMON(addr_curr, 32'd1, 5'd0, 5'd0, addr_common, , ,);
+	 // PC = PC + 1 (+N)
+	 // get the N
+	 wire [31:0] addr_br_tmp;
+	 assign addr_br_tmp = extended_constant;
+	 // PC = PC + 1 + N
+	 alu PC_BR(addr_common, addr_br_tmp, 5'd0, 5'd0, addr_br, , ,);
+	 // PC = T
+	 assign addr_signal_T[26:0] = q_imem[26:0];
+	 assign addr_signal_T[31:27] = addr_curr[31:27];
+	 // PC = $rd
+	 assign addr_jr = data_readRegB; 
+	 
+	 wire [31:0] addr_tmp1, addr_tmp2;
+	 assign addr_tmp1 = br ? addr_br : addr_common;
+	 
+	 //assign addr_tmp1 = (control_signal[7]&&isNotEqual)||(control_signal[10]&&(!isLessThan)&&isNotEqual)?addr_curr + extended_constant + 32'd1:addr_curr + 32'd1;
+	 assign addr_tmp2 = signal_T ? addr_signal_T : addr_tmp1;
+	 assign addr_next = control_signal[9] ? addr_jr : addr_tmp2;
+	 
+
+	 pc PC(.out(addr_curr), .in(addr_next), .clk(clock), .pc_en(1'b1), .clr(reset));	 
+	 assign address_imem = addr_curr[11:0];
+	 
+	 // ############## PC & Imem end   ################
+	 
+	
+	 
 	 /*exception part*/
+	 wire expr;
 	 wire [31:0] status_write;
 	 //wire status_en;
 	 exception the_exception(opcode, func_field, status_write, status_en);
 	 //expr signal
-	 wire expr;
-	 and and_gate_expr(expr, overflow, status_en);
-					
+	 and and_gate_expr(expr, overflow, status_en);	 
+	 	 
+	 
+	 
+	 /* Regfile output */
+	 //ctrl_writeEnable	 
+	 assign ctrl_writeEnable = control_signal[2];     // Rwe
+
+	 
+	 //ctrl_writeReg
+	 // setx write in $30
+	 wire [4:0] setx_write;
+	 assign setx_write = control_signal[12] ? 5'd30 : reg_d;
+	 // jal write in $31
+	 wire [4:0] jal_write;
+	 assign jal_write = control_signal[8] ? 5'd31 : setx_write;
+	 
+	 wire [4:0] expr_write;
+	 assign expr_write = expr ? 5'd30 : jal_write;
+	 assign ctrl_writeReg = expr_write;
+	  
+	 //ctrl_readRegA
+	 assign ctrl_readRegA = control_signal[11] ? 5'd30 : reg_s;    // bex    	 
+	 //assign ctrl_readRegA = reg_s;
+	 //ctrl_readRegB
+	 assign ctrl_readRegB = control_signal[1] ? reg_t : reg_d;  // base on the rdst to implement
+	 	 
+	 
 	 /* dmeme output */
 	 //address_dmem
 	 assign address_dmem = alu_execute_data_result[11:0];
@@ -193,13 +255,39 @@ module processor(
 	 assign data = data_readRegB;
 	 //wren
 	 assign wren = control_signal[3];
+
+
 	 
 	 /* Regfile output */
 	 //data_writeReg
-	 wire [31:0] data_writeReg_rwd;
+	 wire [31:0] data_writeReg_rwd, data_writeReg_ex, data_writeReg_setx;
+	 // 2 to 1 Mux for rwd
 	 assign data_writeReg_rwd = control_signal[0] ? q_dmem : alu_execute_data_result;
-	 //expr
-	 assign data_writeReg = expr ? status_write : data_writeReg_rwd;
+	 // 2 to 1 Mux for exception
+	 assign data_writeReg_ex = expr ? status_write : data_writeReg_rwd;
+	 // Add new lines here
 	 
->>>>>>> cffac3166ebc375e41d1368628e102358a1a1fb4
+	 
+	 // 2 to 1 Mux for SETX
+	 wire [31:0] addr_T, addr_jal;
+	 assign addr_T[26:0] = q_imem[26:0];
+	 assign addr_T[31:27] = 5'd0;
+ 
+	 assign data_writeReg_setx = control_signal[12] ? addr_T : data_writeReg_ex;
+	 // 2 to 1 Mux for jal
+	 wire [31:0] addr_imem_tmp;
+	 
+	 assign addr_imem_tmp = addr_curr;
+	 //assign addr_imem_tmp[31:12] = 20'd0;
+	 
+	 alu ALU_JAL(addr_imem_tmp, 32'd1, 5'd0, 5'd0, addr_jal, , ,);
+	 //assign addr_jal[31:12] = 20'd0;
+	 assign data_writeReg = control_signal[8] ? addr_jal : data_writeReg_setx;
+	 
+	 
+//	 wire [31:0] data_writeReg_rwd;
+//	 assign data_writeReg_rwd = control_signal[0] ? q_dmem : alu_execute_data_result;
+//	 // expr
+//	 assign data_writeReg = expr ? status_write : data_writeReg_rwd;
+	 
 endmodule
