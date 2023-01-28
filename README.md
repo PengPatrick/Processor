@@ -1,6 +1,6 @@
 # Full Processor
 ## Author
-    Kirk Xu (hx84)  Patrick Peng (jp550)  Yuhan Xue (yx167)
+    Kirk Xu  Patrick Peng  Yuhan Xue 
 ## Work
 We implemented some basic functionalities of a processor. We implemented the following R-type, I-type and J-type instructions:    
 <font color=red>_add, addi, sub, and, or, sll, sra, sw, lw, j, bne, jal, jr, blt, bex, setx._</font>   
